@@ -1,0 +1,9 @@
+.border {
+    border: "1px solid black"
+}
+
+.top-bar {
+   height: '10vh';
+   text-align: 'center';
+}
+
