@@ -7,6 +7,14 @@ import _ from 'lodash'
 import { isWin, aiPlace, copyBoard} from "./gameLogic";
 
 
+// Thank you for the interview invitaion!
+// this is my first React project so please don't mind there are some design flaws
+
+// Thank you!
+// Yitong Xiao
+
+//======================================================
+
 
 
 const noPadding = {
