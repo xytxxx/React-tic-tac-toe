@@ -4,6 +4,10 @@ import pic1 from './cinnamon_sticks.svg';
 import pic_1 from './donut.svg';
 import pic0 from './white.svg';
 import _ from 'lodash'
+import { isWin, aiPlace, copyBoard} from "./gameLogic";
+
+
+
 
 const noPadding = {
     padding: 0,
@@ -19,8 +23,15 @@ function getId() {
 
 class NavBar extends Component {
     getMessage() {
+        
         if (this.props.data.playerSide === 0) {
             return "Choose your side!"
+        } else if (this.props.data.isWin === this.props.data.playerSide) {
+            return "You Win!!"
+        } else if (this.props.data.isWin === -1 * this.props.data.playerSide) {
+            return "AI Win!!"
+        } else if (this.props.data.isWin === 0) {
+            return "Draw!!"
         } else if (this.props.data.currentTurn !== this.props.data.playerSide) {
             return "AI's turn.";
         } else {
@@ -67,7 +78,9 @@ class Game extends Component {
     }
     // try to place a piece
     tryPlace(r, c){
-        if (this.props.data.board[r][c] !== 0) {
+        
+        if (this.props.data.isWin !== 2 || this.props.data.board[r][c] !== 0) {
+            console.log('invalid click')
             return;  
         } else {
             this.props.placePiece(r, c);
@@ -115,6 +128,17 @@ var newGame = {
     board: [[0,0,0],[0,0,0],[0,0,0]],  //1 = cinnamon sticks, -1 = donut
     currentTurn: 1,
     playerSide: 0,
+    isWin: 2
+}
+
+function findEmptyCells(board) {
+    let emptyCells = [];
+    for(let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+            if (board[r][c] === 0) emptyCells.push([r,c]);
+        }
+    }
+    return emptyCells;
 }
 class App extends Component {
     constructor(props) {
@@ -123,10 +147,12 @@ class App extends Component {
             board: [[0,0,0],[0,0,0],[0,0,0]],  //1 = cinnamon sticks, -1 = donut
             currentTurn: 1,
             playerSide: 0,
+            isWin: 2
         };
         this.resetGame = this.resetGame.bind(this);
         this.playerChoose = this.playerChoose.bind(this);
         this.placePiece = this.placePiece.bind(this);
+        this.aiTurn = this.aiTurn.bind(this)
     }
 
     resetGame() {
@@ -136,16 +162,40 @@ class App extends Component {
         let gameStart = _.cloneDeep(newGame);
         gameStart.playerSide = i;
         this.setState(gameStart);
+        if (this.state.currentTurn !== this.state.playerSide) {
+            this.aiTurn();
+        }
     }
+    // aiTurn() {
+    //     console.log ('ai moving')
+    //     let move = aiPlace(copyBoard(this.state.board), this.state.playerSide);
+    //     console.log(move)
+    //     this.placePiece(move[0],move[1]);
+    // }
+    aiTurn() {
+        console.log("this turn is "+this.state.currentTurn)
+        let e = findEmptyCells(this.state.board);
+        this.placePiece(e[0][0], e[0][1])
+    }
+
     placePiece(r,c){
+        
         let newTurn = -this.state.currentTurn;
-        let newBoard = this.state.board;
+        console.log('placing at' + r.toString() + ' and ' + c +', newTurn ' + newTurn)
+        let newBoard = copyBoard(this.state.board);
         newBoard[r][c] = -newTurn;
+        let w = isWin(newBoard);
         this.setState(prevState=>({
             ...prevState,
             currentTurn: newTurn,
-            board: newBoard
-        }))
+            board: newBoard,
+            isWin: w
+        }), ()=>{
+            console.log ('before ai moving')
+            if (this.state.isWin === 2 && (this.state.currentTurn !== this.state.playerSide)) {
+                this.aiTurn();
+            }
+        });
     }
 
     renderMain(){
