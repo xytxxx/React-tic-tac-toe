@@ -5,18 +5,13 @@ import pic_1 from './donut.svg';
 import pic0 from './white.svg';
 import _ from 'lodash'
 
-var rowStyle ={
-    height: '10vh',
-    textAlign: 'center'
-}
-
 const noPadding = {
     padding: 0,
     margin: "auto",
 };
 
 var id = 0;
-
+//returns a unique id
 function getId() {
     id++;
     return id;
@@ -35,7 +30,7 @@ class NavBar extends Component {
 
     render() {
         return (
-            <div className="row" style={rowStyle} id="topBar" >
+            <div className="row top-bar" id="topBar" >
                 <div className="col-6">
                     <span> { this.getMessage() }</span>
                 </div>
