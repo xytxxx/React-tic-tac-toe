@@ -4,22 +4,25 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
 
 In the project directory, you can run:
 
+### `serve -s build`
+
+The build folder is ready to be deployed.
+You may serve it with a static server:
+
+```
+  npm install -g serve
+  serve -s build
+```
+
 ### `npm start`
+
+**Need all dependencies installed**
 
 Runs the app in the development mode.<br>
 Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
 The page will reload if you make edits.<br>
 You will also see any lint errors in the console.
-
-### `serve -s build`
-
-The build folder is ready to be deployed.
-You may serve it with a static server:
-```
-  npm install -g serve
-  serve -s build
-```
 
 ### `npm run build`
 
