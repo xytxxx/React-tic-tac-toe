@@ -4,7 +4,7 @@ var _ = require('lodash')
  * returns 1 if 1 win, -1 if -1 win, 0 if draw, 2 if not finished
  * @param {*} board 
  */
-export function isWin (board) {
+function isWin (board) {
     var sum0 = 0;
     var sum1 = 0;
     var draw = true;
@@ -31,7 +31,7 @@ export function isWin (board) {
     sum0 = 0;
     for (let d = 0; d < 3; d++) {
         sum0 += board[d][d];
-        sum1 += board[2-d][2-d]
+        sum1 += board[2-d][d]
     }
     if (sum0 === 3) return 1;
     if (sum0 === -3) return -1;
@@ -44,7 +44,7 @@ export function isWin (board) {
 }
 
 
-export function copyBoard(board){
+function copyBoard(board){
     return board.map(function(row) {
         return row.slice();
     });
@@ -60,7 +60,7 @@ function findEmptyCells(board) {
     return emptyCells;
 }
 
-
+let pairToLiteral = (pair) => {return pair[0].toString()+pair[1].toString()}
 /**
  * returns all possible boards from one piece form current board
  * @param {*} board 
@@ -102,67 +102,93 @@ function findCriticalSpots(board) {
         } else if ( (pair[0]===0 && pair[1]===2) || (pair[0]===2 && pair[1]===0)) {
             let sum = 0;
             for (let d = 0; d < 3; d++) {
-                sum+=board[2-d][2-d]; 
+                sum+=board[2-d][d]; 
             }
             if (sum === 2) ret["1"].push(pair);
             if (sum === -2) ret["-1"].push(pair);
         }
     }
-    let pairToLiteral = (pair) => {return pair[0].toString()+pair[1].toString()}
+    
     ret["1"] = _.uniqBy(ret["1"], pairToLiteral);
     ret["-1"] = _.uniqBy(ret["-1"], pairToLiteral);
     return ret;
 }
 
+
+function updarteBestMove(m) {
+    if (!m) {
+        console.log('wrong')
+    } else {
+        bestMove = m;
+    }
+}
 // for each board on my turn, these are possible situations:
 // I already win/lose
 // I can certainly win
 // I must block enemy
 // I certainly lose
 // there is one place that ensures at least a draw
-
 // returns {the best 'worst outcome', [r, c]}
-
-function findMoveMyTurn(board, mySide){
-    let otherSide = -1*mySide;
+var bestMove = []
+function findMoveMinMax(curBoard, mySide, myTurn, depth){
+    var board = copyBoard(curBoard)
+    let curSide = mySide * (myTurn? 1 : -1);
     let win = isWin(board);
 
     if (win === mySide) {
-        return {outcome: 1, move:[]};
+        updarteBestMove([]);
+        return 10 - depth;
     }
     if (win === -1*mySide) {
-        return {outcome: -1, move:[]};
+        updarteBestMove([]);
+        return -10 + depth;
     }
     if (win === 0) {
-        return {outcome: 0, move:[]};
+        updarteBestMove([]);
+        return 0;
     }
+    
+    
+    let critical = findCriticalSpots(board);
+    let curSideStr = curSide.toString();
+    let otherSideStr = (-1 * curSide).toString()
     // shortcuts  -- do not make stupid move if there are 2 in a row
-    // let critical = findCriticalSpots(copyBoard(board));
-    // if (critical[mySide.toString()].length > 0){
-    //     return {outcome: 1, move:critical[mySide.toString()][0]};
-    // } else if (critical[otherSide.toString()].length > 1) {
-    //     return {outcome: -1, move:critical[otherSide.toString()][0]};
-    // } else if (critical[otherSide.toString()].length > 0) { 
-    //     // we have to block enemy. does not know what's next
-    //     let nextBoard =copyBoard(board);
-    //     let move = critical[otherSide.toString()][0];
-    //     nextBoard[move[0]][move[1]] = mySide;
-    //     let theirBestMove = findMoveMyTurn(nextBoard, -1*mySide);
-    //     return {outcome: -1 * theirBestMove.outcome, move: move};
-    // }
-
-    let neighbours = findNeighbours(copyBoard(board), mySide);
-    let theirBestMoves = []
-    for (let next of neighbours) {
-        theirBestMoves.push({move: next.move, result: findMoveMyTurn(next.board, -1*mySide)});
+    if (critical[curSideStr].length > 0){
+        updarteBestMove(critical[curSideStr][0]);
+        return (10 - depth) * (myTurn? 1 : -1);
+    } else if (critical[otherSideStr].length > 1) {
+        updarteBestMove(critical[otherSideStr][0]);
+        return (10 - depth) * (myTurn? -1 : 1);
+    } else if (critical[otherSideStr].length > 0) { 
+        // we have to block enemy. does not know what's next
+        // updarteBestMove( critical[otherSideStr][0]);
+        // board[bestMove[0]][bestMove[1]] = curSide;
+        // return findMoveMinMax(board, mySide, !myTurn, depth+1);
     }
-    theirBestMoves.sort((a, b)=>{
-        if (a.result.outcome===b.result.outcome) return 0;
-        if (a.result.outcome > b.result.outcome) return 1;
-        return -1;
-    })
 
-    return {outcome: -1*theirBestMoves[0].result.outcome, move:theirBestMoves[0].move}
+    //not short cuts, analysis all moves
+    let neighbours = findNeighbours(board, curSide);
+    neighbours.map((next)=>{ 
+        next.score = findMoveMinMax(next.board, mySide, !myTurn, depth+1) 
+        return next;
+    })
+    neighbours.sort((a, b)=>{
+        if (a.score === b.score) {
+            return 0;
+        } else if (a.score > b.score) {
+            return 1;
+        } else {
+            return -1;
+        }
+    })
+ 
+    if (myTurn) {
+        updarteBestMove(neighbours[neighbours.length - 1].move);
+        return neighbours[neighbours.length - 1].score;
+    } else {
+        updarteBestMove( neighbours[0].move);
+        return neighbours[0].score;
+    }
 
 }   
 
@@ -171,8 +197,9 @@ function findMoveMyTurn(board, mySide){
  * @param {*} playerSide 
  * @returns {(r, c)} 
  */
-export function aiPlace (board, playerSide){
-    return findMoveMyTurn(board, -1*playerSide).move;
+function aiPlace (board, playerSide){
+    findMoveMinMax(board, -playerSide, true, 0);
+    return bestMove;
 }
 
 // console.log(aiPlace([[1,1,0],
@@ -182,21 +209,10 @@ export function aiPlace (board, playerSide){
 // console.log(aiPlace([[0,0,0],
 //                     [0,0,0],
 //                     [0,0,0]], 1));
-// var turn = 1;
-// var lastMove = aiPlace([[0,0,0],
-//                         [0,0,0],
-//                         [0,0,0]], turn);
-// var board = [[0,0,0],
-//             [0,0,0],
-//             [0,0,0]]
 
-// while (lastMove.length > 0) {
-//     for (let r of board) {
-//         console.log(r)
-//     }
-//         console.log("========")
-//     board[lastMove[0]][lastMove[1]] = turn;
-//     turn = -1*turn;
-//     lastMove = aiPlace(board, turn);
-// }
 
+module.exports={
+    aiPlace: aiPlace,
+    isWin: isWin,
+    copyBoard: copyBoard
+}

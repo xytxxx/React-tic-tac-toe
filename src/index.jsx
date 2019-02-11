@@ -131,15 +131,6 @@ var newGame = {
     isWin: 2
 }
 
-function findEmptyCells(board) {
-    let emptyCells = [];
-    for(let r = 0; r < 3; r++) {
-        for (let c = 0; c < 3; c++) {
-            if (board[r][c] === 0) emptyCells.push([r,c]);
-        }
-    }
-    return emptyCells;
-}
 class App extends Component {
     constructor(props) {
         super(props);
@@ -161,22 +152,28 @@ class App extends Component {
     playerChoose(i) {
         let gameStart = _.cloneDeep(newGame);
         gameStart.playerSide = i;
-        this.setState(gameStart);
-        if (this.state.currentTurn !== this.state.playerSide) {
-            this.aiTurn();
+        this.setState(prev=>(gameStart),
+        ()=>{
+            if (this.state.currentTurn !== this.state.playerSide) {
+                this.aiTurn();
+            }
         }
+        );
+        
+    }
+    aiTurn() {
+        console.log ('ai moving')
+        for (let r of this.state.board) {
+            console.log(r);
+        }
+        let move = aiPlace(copyBoard(this.state.board), this.state.playerSide);
+        this.placePiece(move[0],move[1]);
     }
     // aiTurn() {
-    //     console.log ('ai moving')
-    //     let move = aiPlace(copyBoard(this.state.board), this.state.playerSide);
-    //     console.log(move)
-    //     this.placePiece(move[0],move[1]);
+    //     console.log("this turn is "+this.state.currentTurn)
+    //     let e = findEmptyCells(this.state.board);
+    //     this.placePiece(e[0][0], e[0][1])
     // }
-    aiTurn() {
-        console.log("this turn is "+this.state.currentTurn)
-        let e = findEmptyCells(this.state.board);
-        this.placePiece(e[0][0], e[0][1])
-    }
 
     placePiece(r,c){
         
@@ -191,7 +188,6 @@ class App extends Component {
             board: newBoard,
             isWin: w
         }), ()=>{
-            console.log ('before ai moving')
             if (this.state.isWin === 2 && (this.state.currentTurn !== this.state.playerSide)) {
                 this.aiTurn();
             }
